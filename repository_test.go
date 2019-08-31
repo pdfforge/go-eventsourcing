@@ -31,36 +31,57 @@ func (d *DeviceAggregate) Transition(event eventsourcing.Event) {
 	}
 }
 
-func TestSaveAndGetAggregate(t *testing.T) {
+func TestCreatePerson(t *testing.T) {
 	repo := eventsourcing.NewRepository(memory.Create())
+	person := Person{}
+	repo.New(&person)
 
-	device := DeviceAggregate{}
-	repo.New(&device)
-	device.SetName("New name")
-	err := repo.Save(&device)
+	err := person.Create("kalle")
 	if err != nil {
-		t.Fatal("could not save device")
-	}
-	copyDevice := DeviceAggregate{}
-	err = repo.Get(device.ID(), &copyDevice)
-	if err != nil {
-		t.Fatal("could not get aggregate")
-	}
-
-	if device.Version() != copyDevice.Version() {
-		t.Fatalf("Wrong version org %q copy %q", device.Version(), copyDevice.Version())
+		t.Fatalf("could not create person %v", err)
 	}
 }
 
-func TestCreateAggregate(t *testing.T) {
+func TestGrowPersonBeforeBorn(t *testing.T) {
+	repo := eventsourcing.NewRepository(memory.Create())
+	person := Person{}
+	repo.New(&person)
+
+	err := person.GrowOlder()
+	if err == nil {
+		t.Fatalf("person has to be born before ageing")
+	}
+}
+
+func TestSaveAndGetAggregate(t *testing.T) {
 	repo := eventsourcing.NewRepository(memory.Create())
 
-	device := DeviceAggregate{}
-	repo.New(&device)
-	if device.Parent() == nil {
-		t.Fatalf("Parent not set")
+	person := Person{}
+	repo.New(&person)
+	person.Create("kalle")
+	err := repo.Save(&person)
+	if err != nil {
+		t.Fatal("could not save person")
 	}
-	device.SetName("test")
-	repo.Save(&device)
+	twin := Person{}
+	err = repo.Get(person.ID(), &twin)
+	if err != nil {
+		t.Fatalf("could not get person %v", err)
+	}
+
+	if person.Version() != twin.Version() {
+		t.Fatalf("Wrong version org %q copy %q", person.Version(), twin.Version())
+	}
+}
+
+func TestSaveBeforeNew(t *testing.T) {
+	repo := eventsourcing.NewRepository(memory.Create())
+
+	person := Person{}
+	person.GrowOlder()
+	err := repo.Save(&person)
+	if err != nil {
+		t.Fatal("could not save person")
+	}
 
 }

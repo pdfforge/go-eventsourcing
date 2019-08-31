@@ -56,9 +56,12 @@ func (p *Person) CreateWithID(id, name string) error {
 }
 
 // GrowOlder command
-func (p *Person) GrowOlder() {
+func (p *Person) GrowOlder() error {
+	if p.ID() == "" {
+		return fmt.Errorf("person not born")
+	}
 	p.TrackChange(AgedOneYear{})
-
+	return nil
 }
 
 // Transition the person state dependent on the events
