@@ -23,57 +23,61 @@ type Born struct {
 type AgedOneYear struct {
 }
 
-// CreatePerson constructor for the Person
-func CreatePerson(name string) (*Person, error) {
+// Create the first person events
+func (p *Person) Create(name string) error {
+	if p.ID() != "" {
+		return fmt.Errorf("the person is already initialized")
+	}
 	if name == "" {
-		return nil, fmt.Errorf("name can't be blank")
+		return fmt.Errorf("name can't be blank")
 	}
 
-	person := Person{}
-	person.SetParent(&person)
-	person.TrackChange(Born{name: name})
-	return &person, nil
+	p.TrackChange(Born{name: name})
+	return nil
 }
 
-// CreatePersonWithID constructor for the Person that sets the aggregate id from the outside
-func CreatePersonWithID(id, name string) (*Person, error) {
+// CreateWithID the first person event that sets the aggregate id from the outside
+func (p *Person) CreateWithID(id, name string) error {
+	if p.ID() != "" {
+		return fmt.Errorf("the person is already initialized")
+	}
 	if name == "" {
-		return nil, fmt.Errorf("name can't be blank")
+		return fmt.Errorf("name can't be blank")
 	}
 
-	person := Person{}
-	eventsourcing.CreateAggregate(&person)
-	err := person.SetID(id)
+	err := p.SetID(id)
 	if err == eventsourcing.ErrAggregateAlreadyExists {
-		return nil, err
+		return err
 	} else if err != nil {
 		panic(err)
 	}
-	person.TrackChange(Born{name: name})
-	return &person, nil
+	p.TrackChange(Born{name: name})
+	return nil
 }
 
 // GrowOlder command
-func (person *Person) GrowOlder() {
-	person.TrackChange(AgedOneYear{})
+func (p *Person) GrowOlder() {
+	p.TrackChange(AgedOneYear{})
 
 }
 
 // Transition the person state dependent on the events
-func (person *Person) Transition(event eventsourcing.Event) {
+func (p *Person) Transition(event eventsourcing.Event) {
 	switch e := event.Data.(type) {
 
 	case Born:
-		person.age = 0
-		person.name = e.name
+		p.age = 0
+		p.name = e.name
 
 	case AgedOneYear:
-		person.age += 1
+		p.age += 1
 	}
 }
 
 func TestCreateNewPerson(t *testing.T) {
-	person, err := CreatePerson("kalle")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	err := person.Create("kalle")
 	if err != nil {
 		t.Fatal("Error when creating person", err.Error())
 	}
@@ -97,7 +101,9 @@ func TestCreateNewPerson(t *testing.T) {
 
 func TestCreateNewPersonWithIDFromOutside(t *testing.T) {
 	id := "123"
-	person, err := CreatePersonWithID(id, "kalle")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	err := person.CreateWithID(id, "kalle")
 	if err != nil {
 		t.Fatal("Error when creating person", err.Error())
 	}
@@ -107,8 +113,11 @@ func TestCreateNewPersonWithIDFromOutside(t *testing.T) {
 	}
 }
 
+
 func TestBlankName(t *testing.T) {
-	_, err := CreatePerson("")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	err := person.Create("")
 	if err == nil {
 		t.Fatal("The constructor should return error on blank name")
 	}
@@ -116,7 +125,9 @@ func TestBlankName(t *testing.T) {
 }
 
 func TestSetIDOnExistingPerson(t *testing.T) {
-	person, err := CreatePerson("Kalle")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	err := person.Create("Kalle")
 	if err != nil {
 		t.Fatal("The constructor returned error")
 	}
@@ -129,7 +140,9 @@ func TestSetIDOnExistingPerson(t *testing.T) {
 }
 
 func TestPersonAgedOneYear(t *testing.T) {
-	person, _ := CreatePerson("kalle")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	_ = person.Create("kalle")
 	person.GrowOlder()
 
 	if len(person.Changes()) != 2 {
@@ -141,13 +154,26 @@ func TestPersonAgedOneYear(t *testing.T) {
 	}
 }
 
+
 func TestPersonGrewTenYears(t *testing.T) {
-	person, _ := CreatePerson("kalle")
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	person.Create("kalle")
 	for i := 1; i <= 10; i++ {
 		person.GrowOlder()
 	}
 
 	if person.age != 10 {
 		t.Fatal("person has the wrong age")
+	}
+}
+
+func TestCreatePersonTwice(t *testing.T) {
+	person := Person{}
+	eventsourcing.CreateAggregate(&person)
+	person.Create("kalle")
+	err := person.Create("anka")
+	if err == nil {
+		t.Fatalf("Could not be able to create twice on same person")
 	}
 }
