@@ -2,6 +2,7 @@ package eventsourcing
 
 import (
 	"fmt"
+	"github.com/hallgren/eventsource/eventstore"
 	"github.com/hallgren/eventsourcing/snapshotstore"
 	"github.com/imkira/go-observer"
 	"reflect"
@@ -9,8 +10,8 @@ import (
 
 // eventStore interface expose the methods an event store must uphold
 type eventStore interface {
-	Save(events []Event) error
-	Get(id string, aggregateType string, afterVersion Version) ([]Event, error)
+	Save(events []eventstore.Event) error
+	Get(id string, aggregateType string, afterVersion Version) ([]eventstore.Event, error)
 }
 
 type snapshotStore interface {
@@ -21,9 +22,9 @@ type snapshotStore interface {
 // aggregate interface to use the aggregate root specific methods
 type aggregate interface {
 	id() string
-	BuildFromHistory(a aggregate, events []Event)
-	Transition(event Event)
-	changes() []Event
+	BuildFromHistory(a aggregate, events []eventstore.Event)
+	Transition(event eventstore.Event)
+	changes() []eventstore.Event
 	updateVersion()
 	version() Version
 }

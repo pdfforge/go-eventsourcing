@@ -11,6 +11,16 @@ type EventSerializer interface {
 	DeserializeEvent(v []byte) (event eventsourcing.Event, err error)
 }
 
+// Event holding meta data and the application specific event in the Data property
+type Event struct {
+	AggregateRootID string
+	Version         int
+	Reason          string
+	AggregateType   string
+	Data            interface{}
+	MetaData        map[string]interface{}
+}
+
 // ErrEventMultipleAggregates when events holds different id
 var ErrEventMultipleAggregates = errors.New("events holds events for more than one aggregate")
 
@@ -24,7 +34,7 @@ var ErrConcurrency = errors.New("concurrency error")
 var ErrReasonMissing = errors.New("event holds no reason")
 
 // ValidateEvents make sure the incoming events are valid
-func ValidateEvents(aggregateID eventsourcing.AggregateRootID, currentVersion eventsourcing.Version, events []eventsourcing.Event) error {
+func ValidateEvents(aggregateID string, currentVersion int, events []Event) error {
 	aggregateType := events[0].AggregateType
 
 	for _, event := range events {

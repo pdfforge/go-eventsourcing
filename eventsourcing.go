@@ -3,6 +3,7 @@ package eventsourcing
 import (
 	"errors"
 	"fmt"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"reflect"
 
 	uuid "github.com/gofrs/uuid"
@@ -18,18 +19,10 @@ type AggregateRootID string
 type AggregateRoot struct {
 	AggregateID      AggregateRootID
 	AggregateVersion Version
-	AggregateEvents  []Event
+	AggregateEvents  []eventstore.Event
 }
 
-// Event holding meta data and the application specific event in the Data property
-type Event struct {
-	AggregateRootID AggregateRootID
-	Version         Version
-	Reason          string
-	AggregateType   string
-	Data            interface{}
-	MetaData        map[string]interface{}
-}
+
 
 // ErrAggregateAlreadyExists returned if the AggregateID is set more than one time
 var ErrAggregateAlreadyExists = errors.New("its not possible to set id on already existing aggregate")
@@ -56,9 +49,9 @@ func (state *AggregateRoot) TrackChange(a aggregate, eventData interface{}) erro
 
 	reason := reflect.TypeOf(eventData).Elem().Name()
 	aggregateType := reflect.TypeOf(a).Elem().Name()
-	event := Event{
-		AggregateRootID: state.AggregateID,
-		Version:         state.nextVersion(),
+	event := eventstore.Event{
+		AggregateRootID: string(state.AggregateID),
+		Version:         int(state.nextVersion()),
 		Reason:          reason,
 		AggregateType:   aggregateType,
 		Data:            eventData,
@@ -69,13 +62,13 @@ func (state *AggregateRoot) TrackChange(a aggregate, eventData interface{}) erro
 }
 
 // BuildFromHistory builds the aggregate state from events
-func (state *AggregateRoot) BuildFromHistory(a aggregate, events []Event) {
+func (state *AggregateRoot) BuildFromHistory(a aggregate, events []eventstore.Event) {
 	for _, event := range events {
 		a.Transition(event)
 		//Set the aggregate id
-		state.AggregateID = event.AggregateRootID
+		state.AggregateID = AggregateRootID(event.AggregateRootID)
 		// Make sure the aggregate is in the correct version (the last event)
-		state.AggregateVersion = event.Version
+		state.AggregateVersion = Version(event.Version)
 	}
 }
 
@@ -87,12 +80,12 @@ func (state *AggregateRoot) nextVersion() Version {
 // called by the Save func in the repository after the events are stored
 func (state *AggregateRoot) updateVersion() {
 	if len(state.AggregateEvents) > 0 {
-		state.AggregateVersion = state.AggregateEvents[len(state.AggregateEvents)-1].Version
-		state.AggregateEvents = []Event{}
+		state.AggregateVersion = Version(state.AggregateEvents[len(state.AggregateEvents)-1].Version)
+		state.AggregateEvents = []eventstore.Event{}
 	}
 }
 
-func (state *AggregateRoot) changes() []Event {
+func (state *AggregateRoot) changes() []eventstore.Event {
 	return state.AggregateEvents
 }
 
@@ -128,7 +121,7 @@ func (id AggregateRootID) String() string {
 // CurrentVersion return the version based on events that are not stored
 func (state *AggregateRoot) CurrentVersion() Version {
 	if len(state.AggregateEvents) > 0 {
-		return state.AggregateEvents[len(state.AggregateEvents)-1].Version
+		return Version(state.AggregateEvents[len(state.AggregateEvents)-1].Version)
 	}
 	return state.AggregateVersion
 }
