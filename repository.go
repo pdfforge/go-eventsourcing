@@ -11,7 +11,7 @@ import (
 // eventStore interface expose the methods an event store must uphold
 type eventStore interface {
 	Save(events []eventstore.Event) error
-	Get(id string, aggregateType string, afterVersion Version) ([]eventstore.Event, error)
+	Get(id string, aggregateType string, afterVersion int) ([]eventstore.Event, error)
 }
 
 type snapshotStore interface {
@@ -26,7 +26,7 @@ type aggregate interface {
 	Transition(event eventstore.Event)
 	changes() []eventstore.Event
 	updateVersion()
-	version() Version
+	version() int
 }
 
 // Repository is the returned instance from the factory function

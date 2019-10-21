@@ -1,7 +1,7 @@
 package serializer_test
 
 import (
-	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/serializer/json"
 	"github.com/hallgren/eventsourcing/serializer/unsafe"
 	"reflect"
@@ -9,8 +9,8 @@ import (
 )
 
 type serializer interface {
-	SerializeEvent(event eventsourcing.Event) ([]byte, error)
-	DeserializeEvent(v []byte) (event eventsourcing.Event, err error)
+	SerializeEvent(event eventstore.Event) ([]byte, error)
+	DeserializeEvent(v []byte) (event eventstore.Event, err error)
 }
 
 func initSerializers(t *testing.T) []serializer {
@@ -24,7 +24,7 @@ func initSerializers(t *testing.T) []serializer {
 
 type SomeAggregate struct{}
 
-func (s *SomeAggregate) Transition(event eventsourcing.Event) {}
+func (s *SomeAggregate) Transition(event eventstore.Event) {}
 
 type SomeData struct {
 	A int
@@ -48,7 +48,7 @@ func TestSerializeDeserialize(t *testing.T) {
 	metaData["foo"] = "bar"
 	for _, s := range serializers {
 		t.Run(reflect.TypeOf(s).Elem().Name(), func(t *testing.T) {
-			v, err := s.SerializeEvent(eventsourcing.Event{
+			v, err := s.SerializeEvent(eventstore.Event{
 				AggregateRootID: "123",
 				Version:         1,
 				Data:            data,

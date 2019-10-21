@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/etcd-io/bbolt"
-	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore"
 	"time"
 )
@@ -141,7 +140,7 @@ func (e *BBolt) Save(events []eventstore.Event) error {
 }
 
 // Get aggregate events
-func (e *BBolt) Get(id string, aggregateType string, afterVersion eventsourcing.Version) ([]eventstore.Event, error) {
+func (e *BBolt) Get(id string, aggregateType string, afterVersion int) ([]eventstore.Event, error) {
 	bucketName := aggregateKey(aggregateType, id)
 
 	tx, err := e.db.Begin(false)

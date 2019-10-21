@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 )
 
 // FrequentFlierAccount represents the state of an instance of the frequent flier
@@ -57,7 +58,7 @@ func CreateFrequentFlierAccount(id string) *FrequentFlierAccountAggregate {
 
 // NewFrequentFlierAccountFromHistory creates a FrequentFlierAccount given a history
 // of the changes which have occurred for that account.
-func NewFrequentFlierAccountFromHistory(events []eventsourcing.Event) *FrequentFlierAccountAggregate {
+func NewFrequentFlierAccountFromHistory(events []eventstore.Event) *FrequentFlierAccountAggregate {
 	state := FrequentFlierAccountAggregate{}
 	state.BuildFromHistory(&state, events)
 	return &state
@@ -90,7 +91,7 @@ func (self *FrequentFlierAccountAggregate) RecordFlightTaken(miles int, tierPoin
 
 // Transition implements the pattern match against event types used both as part
 // of the fold when loading from history and when tracking an individual change.
-func (state *FrequentFlierAccountAggregate) Transition(event eventsourcing.Event) {
+func (state *FrequentFlierAccountAggregate) Transition(event eventstore.Event) {
 
 	switch e := event.Data.(type) {
 

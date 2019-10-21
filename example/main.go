@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/eventstore/memory"
 	"github.com/hallgren/eventsourcing/serializer/unsafe"
 	"time"
@@ -21,7 +22,7 @@ func main() {
 			<-stream.Changes()
 			// advance to next value
 			stream.Next()
-			event := stream.Value().(eventsourcing.Event)
+			event := stream.Value().(eventstore.Event)
 			fmt.Println("STREAM EVENT")
 			fmt.Println(event)
 		}

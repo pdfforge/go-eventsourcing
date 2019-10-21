@@ -94,8 +94,8 @@ func (state *AggregateRoot) setID(id string) {
 	state.AggregateID = AggregateRootID(id)
 }
 
-func (state *AggregateRoot) version() Version {
-	return state.AggregateVersion
+func (state *AggregateRoot) version() int {
+	return int(state.AggregateVersion)
 }
 
 //Public accessors for aggregate root properties

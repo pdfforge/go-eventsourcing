@@ -3,6 +3,7 @@ package snapshotstore_test
 import (
 	"fmt"
 	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/serializer/json"
 	"github.com/hallgren/eventsourcing/snapshotstore"
 	"testing"
@@ -44,7 +45,7 @@ func (person *Person) GrowOlder() error {
 }
 
 // Transition the person state dependent on the events
-func (person *Person) Transition(event eventsourcing.Event) {
+func (person *Person) Transition(event eventstore.Event) {
 	switch e := event.Data.(type) {
 	case *Born:
 		person.Age = 0

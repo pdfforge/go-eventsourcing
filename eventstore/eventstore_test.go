@@ -2,7 +2,6 @@ package eventstore_test
 
 import (
 	sqldriver "database/sql"
-	"eventsourcing"
 	"fmt"
 	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/eventstore/bbolt"
