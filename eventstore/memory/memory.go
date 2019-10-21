@@ -1,7 +1,6 @@
 package memory
 
 import (
-	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore"
 )
 
@@ -22,7 +21,7 @@ func Create(serializer eventstore.EventSerializer) *Memory {
 }
 
 // Save an aggregate (its events)
-func (e *Memory) Save(events []eventsourcing.Event) error {
+func (e *Memory) Save(events []eventstore.Event) error {
 	// Return if there is no events to save
 	if len(events) == 0 {
 		return nil
@@ -34,7 +33,7 @@ func (e *Memory) Save(events []eventsourcing.Event) error {
 	bucketName := aggregateKey(aggregateType, string(aggregateID))
 
 	evBucket := e.aggregateEvents[bucketName]
-	currentVersion := eventsourcing.Version(0)
+	currentVersion := 0
 
 	if len(evBucket) > 0 {
 		// Last version in the list
@@ -69,8 +68,8 @@ func (e *Memory) Save(events []eventsourcing.Event) error {
 }
 
 // Get aggregate events
-func (e *Memory) Get(id string, aggregateType string, afterVersion eventsourcing.Version) ([]eventsourcing.Event, error) {
-	var events []eventsourcing.Event
+func (e *Memory) Get(id string, aggregateType string, afterVersion int) ([]eventstore.Event, error) {
+	var events []eventstore.Event
 	eventsSerialized := e.aggregateEvents[aggregateKey(aggregateType, id)]
 	for _, eventSerialized := range eventsSerialized {
 		event, err := e.serializer.DeserializeEvent(eventSerialized)
@@ -85,8 +84,8 @@ func (e *Memory) Get(id string, aggregateType string, afterVersion eventsourcing
 }
 
 // GlobalGet returns events from the global order
-func (e *Memory) GlobalGet(start int, count int) []eventsourcing.Event {
-	events := make([]eventsourcing.Event, 0)
+func (e *Memory) GlobalGet(start int, count int) []eventstore.Event {
+	events := make([]eventstore.Event, 0)
 	var i int
 	for id, eventSerialized := range e.eventsInOrder {
 		event, err := e.serializer.DeserializeEvent(eventSerialized)

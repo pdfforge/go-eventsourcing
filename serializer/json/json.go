@@ -3,7 +3,7 @@ package json
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"reflect"
 )
 
@@ -26,7 +26,7 @@ type jsonEvent struct {
 }
 
 type aggregate interface {
-	Transition(event eventsourcing.Event)
+	Transition(event eventstore.Event)
 }
 
 var AggregateNameMissingError = fmt.Errorf("missing aggregate name")
@@ -52,7 +52,7 @@ func (h *Handler) Register(aggregate aggregate, events ...interface{}) error {
 }
 
 // Serialize marshals an event into a json byte array
-func (h *Handler) SerializeEvent(event eventsourcing.Event) ([]byte, error) {
+func (h *Handler) SerializeEvent(event eventstore.Event) ([]byte, error) {
 	e := jsonEvent{}
 	// Marshal the event data by itself
 	data, _ := json.Marshal(event.Data)
@@ -71,7 +71,7 @@ func (h *Handler) SerializeEvent(event eventsourcing.Event) ([]byte, error) {
 }
 
 // Deserialize un marshals an byte array into an event
-func (h *Handler) DeserializeEvent(v []byte) (event eventsourcing.Event, err error) {
+func (h *Handler) DeserializeEvent(v []byte) (event eventstore.Event, err error) {
 	jsonEvent := jsonEvent{}
 	err = json.Unmarshal(v, &jsonEvent)
 	if err != nil {
@@ -85,8 +85,8 @@ func (h *Handler) DeserializeEvent(v []byte) (event eventsourcing.Event, err err
 	event.Data = data
 	event.MetaData = jsonEvent.MetaData
 	event.Reason = jsonEvent.Reason
-	event.AggregateRootID = eventsourcing.AggregateRootID(jsonEvent.AggregateRootID)
-	event.Version = eventsourcing.Version(jsonEvent.Version)
+	event.AggregateRootID = jsonEvent.AggregateRootID
+	event.Version = jsonEvent.Version
 	event.AggregateType = jsonEvent.AggregateType
 	return
 }

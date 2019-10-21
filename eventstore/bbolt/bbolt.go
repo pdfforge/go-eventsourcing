@@ -57,7 +57,7 @@ func MustOpenBBolt(dbFile string, s eventstore.EventSerializer) *BBolt {
 }
 
 // Save an aggregate (its events)
-func (e *BBolt) Save(events []eventsourcing.Event) error {
+func (e *BBolt) Save(events []eventstore.Event) error {
 	// Return if there is no events to save
 	if len(events) == 0 {
 		return nil
@@ -84,7 +84,7 @@ func (e *BBolt) Save(events []eventsourcing.Event) error {
 		evBucket = tx.Bucket([]byte(bucketName))
 	}
 
-	currentVersion := eventsourcing.Version(0)
+	currentVersion := 0
 	cursor := evBucket.Cursor()
 	k, obj := cursor.Last()
 	if k != nil {
@@ -141,7 +141,7 @@ func (e *BBolt) Save(events []eventsourcing.Event) error {
 }
 
 // Get aggregate events
-func (e *BBolt) Get(id string, aggregateType string, afterVersion eventsourcing.Version) ([]eventsourcing.Event, error) {
+func (e *BBolt) Get(id string, aggregateType string, afterVersion eventsourcing.Version) ([]eventstore.Event, error) {
 	bucketName := aggregateKey(aggregateType, id)
 
 	tx, err := e.db.Begin(false)
@@ -153,7 +153,7 @@ func (e *BBolt) Get(id string, aggregateType string, afterVersion eventsourcing.
 	evBucket := tx.Bucket([]byte(bucketName))
 
 	cursor := evBucket.Cursor()
-	events := make([]eventsourcing.Event, 0)
+	events := make([]eventstore.Event, 0)
 	firstEvent := int(afterVersion) + 1
 
 	for k, obj := cursor.Seek(itob(firstEvent)); k != nil; k, obj = cursor.Next() {
@@ -167,7 +167,7 @@ func (e *BBolt) Get(id string, aggregateType string, afterVersion eventsourcing.
 }
 
 // GlobalGet returns events from the global order
-func (e *BBolt) GlobalGet(start int, count int) []eventsourcing.Event {
+func (e *BBolt) GlobalGet(start int, count int) []eventstore.Event {
 	tx, err := e.db.Begin(false)
 	if err != nil {
 		return nil
@@ -176,7 +176,7 @@ func (e *BBolt) GlobalGet(start int, count int) []eventsourcing.Event {
 
 	evBucket := tx.Bucket([]byte(globalEventOrderBucketName))
 	cursor := evBucket.Cursor()
-	events := make([]eventsourcing.Event, 0)
+	events := make([]eventstore.Event, 0)
 	counter := 0
 
 	for k, obj := cursor.Seek(itob(start)); k != nil; k, obj = cursor.Next() {

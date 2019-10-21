@@ -2,7 +2,7 @@ package eventsourcing
 
 import (
 	"fmt"
-	"github.com/hallgren/eventsource/eventstore"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/snapshotstore"
 	"github.com/imkira/go-observer"
 	"reflect"

@@ -2,8 +2,9 @@ package eventstore_test
 
 import (
 	sqldriver "database/sql"
+	"eventsourcing"
 	"fmt"
-	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/eventstore"
 	"github.com/hallgren/eventsourcing/eventstore/bbolt"
 	"github.com/hallgren/eventsourcing/eventstore/memory"
 	s "github.com/hallgren/eventsourcing/eventstore/sql"
@@ -39,15 +40,15 @@ type FlightTaken struct {
 	TierPointsAdded int
 }
 
-var aggregateID = eventsourcing.AggregateRootID("123")
-var aggregateID2 = eventsourcing.AggregateRootID("321")
+var aggregateID = "123"
+var aggregateID2 = "321"
 var aggregateType = "FrequentFlierAccount"
 var jsonSerializer = json.New()
 
-func testEventsWithID(aggregateID eventsourcing.AggregateRootID) []eventsourcing.Event {
+func testEventsWithID(aggregateID string) []eventstore.Event {
 	metaData := make(map[string]interface{})
 	metaData["test"] = "hello"
-	history := []eventsourcing.Event{
+	history := []eventstore.Event{
 		{AggregateRootID: aggregateID, Version: 1, Reason: "FrequentFlierAccountCreated", AggregateType: aggregateType, Data: FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}, MetaData: metaData},
 		{AggregateRootID: aggregateID, Version: 2, Reason: "StatusMatched", AggregateType: aggregateType, Data: StatusMatched{NewStatus: StatusSilver}, MetaData: metaData},
 		{AggregateRootID: aggregateID, Version: 3, Reason: "FlightTaken", AggregateType: aggregateType, Data: FlightTaken{MilesAdded: 2525, TierPointsAdded: 5}, MetaData: metaData},
@@ -58,22 +59,22 @@ func testEventsWithID(aggregateID eventsourcing.AggregateRootID) []eventsourcing
 	return history
 }
 
-func testEvents() []eventsourcing.Event {
+func testEvents() []eventstore.Event {
 	return testEventsWithID(aggregateID)
 }
 
-func testEventsPartTwo() []eventsourcing.Event {
-	history := []eventsourcing.Event{
+func testEventsPartTwo() []eventstore.Event {
+	history := []eventstore.Event{
 		{AggregateRootID: aggregateID, Version: 7, Reason: "FlightTaken", AggregateType: aggregateType, Data: FlightTaken{MilesAdded: 5600, TierPointsAdded: 5}},
 		{AggregateRootID: aggregateID, Version: 8, Reason: "FlightTaken", AggregateType: aggregateType, Data: FlightTaken{MilesAdded: 3000, TierPointsAdded: 3}},
 	}
 	return history
 }
 
-var aggregateIDOther = eventsourcing.AggregateRootID("666")
+var aggregateIDOther = "666"
 
-func testEventOtherAggregate() eventsourcing.Event {
-	return eventsourcing.Event{AggregateRootID: aggregateIDOther, Version: 1, Reason: "FrequentFlierAccountCreated", AggregateType: aggregateType, Data: FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}
+func testEventOtherAggregate() eventstore.Event {
+	return eventstore.Event{AggregateRootID: aggregateIDOther, Version: 1, Reason: "FrequentFlierAccountCreated", AggregateType: aggregateType, Data: FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}
 }
 
 func sql() (*s.SQL, func(), error) {
@@ -107,23 +108,23 @@ func bolt() (*bbolt.BBolt, func()) {
 	}
 }
 
-func initEventStores() ([]eventstore, func(), error) {
+func initEventStores() ([]es, func(), error) {
 	sqlEventStore, closer, err := sql()
 	if err != nil {
 		return nil, nil, err
 	}
 	boltEventStore, closerBolt := bolt()
-	eventstores := []eventstore{sqlEventStore, boltEventStore, memory.Create(unsafe.New())}
+	eventstores := []es{sqlEventStore, boltEventStore, memory.Create(unsafe.New())}
 	return eventstores, func() {
 		closer()
 		closerBolt()
 	}, nil
 }
 
-type eventstore interface {
-	Save(events []eventsourcing.Event) error
-	Get(id string, aggregateType string, afterVersion eventsourcing.Version) ([]eventsourcing.Event, error)
-	GlobalGet(start, count int) []eventsourcing.Event
+type es interface {
+	Save(events []eventstore.Event) error
+	Get(id string, aggregateType string, afterVersion int) ([]eventstore.Event, error)
+	GlobalGet(start, count int) []eventstore.Event
 }
 
 func TestSaveAndGetEvents(t *testing.T) {
@@ -328,7 +329,7 @@ func TestGetGlobalEvents(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v could not save the events", err)
 			}
-			_ = es.Save([]eventsourcing.Event{{AggregateRootID: aggregateID2, Version: 1, Reason: "FrequentFlierAccountCreated", AggregateType: aggregateType, Data: FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}})
+			_ = es.Save([]eventstore.Event{{AggregateRootID: aggregateID2, Version: 1, Reason: "FrequentFlierAccountCreated", AggregateType: aggregateType, Data: FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}}})
 
 			fetchedEvents := es.GlobalGet(6, 2)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore"
 )
 
@@ -24,7 +23,7 @@ func (sql *SQL) Close() {
 	sql.db.Close()
 }
 
-func (sql *SQL) Save(events []eventsourcing.Event) error {
+func (sql *SQL) Save(events []eventstore.Event) error {
 	// If no event return no error
 	if len(events) == 0 {
 		return nil
@@ -40,7 +39,7 @@ func (sql *SQL) Save(events []eventsourcing.Event) error {
 	}
 	defer rows.Close()
 
-	currentVersion := eventsourcing.Version(0)
+	currentVersion := 0
 	for rows.Next() {
 		var data string
 		if err := rows.Scan(&data); err != nil {
@@ -79,7 +78,7 @@ func (sql *SQL) Save(events []eventsourcing.Event) error {
 	return nil
 }
 
-func (sql *SQL) Get(id string, aggregateType string, afterVersion eventsourcing.Version) (events []eventsourcing.Event, err error) {
+func (sql *SQL) Get(id string, aggregateType string, afterVersion int) (events []eventstore.Event, err error) {
 	selectStm := `Select data from events where aggregate_id=? and aggregate_type=? and version>? order by version asc`
 	rows, err := sql.db.Query(selectStm, id, aggregateType, afterVersion)
 	if err != nil {
@@ -100,7 +99,7 @@ func (sql *SQL) Get(id string, aggregateType string, afterVersion eventsourcing.
 	return
 }
 
-func (sql *SQL) GlobalGet(start int, count int) []eventsourcing.Event {
+func (sql *SQL) GlobalGet(start int, count int) []eventstore.Event {
 	selectStm := `Select data from events where id>=? order by id asc limit ?`
 	rows, err := sql.db.Query(selectStm, start, count)
 	if err != nil {
@@ -114,8 +113,8 @@ func (sql *SQL) GlobalGet(start int, count int) []eventsourcing.Event {
 	return events
 }
 
-func (sql *SQL) transform(rows *sql.Rows) (events []eventsourcing.Event, err error) {
-	events = make([]eventsourcing.Event, 0)
+func (sql *SQL) transform(rows *sql.Rows) (events []eventstore.Event, err error) {
+	events = make([]eventstore.Event, 0)
 	for rows.Next() {
 		var data string
 		if err = rows.Scan(&data); err != nil {
