@@ -21,11 +21,10 @@ type DeviceSequence struct {
 type Island struct {
 	Start time.Time
 	Stop time.Time
-	Duration time.Duration
 }
 
-// SequenceCreated Event
-type SequenceCreated struct {
+// SequenceInitiated Event
+type SequenceInitiated struct {
 	DeviceID string
 }
 
@@ -38,6 +37,8 @@ type Observation struct {
 // Transition func that builds the aggregate from its events
 func (ds *DeviceSequence) Transition(event eventsourcing.Event) {
 	switch e := event.Data.(type) {
+	case *SequenceInitiated:
+		ds.DeviceID = e.DeviceID
 	case *Observation:
 		ds.Islands = ds.CalcIslands(ds.Islands, *e)
 	}
@@ -46,18 +47,21 @@ func (ds *DeviceSequence) Transition(event eventsourcing.Event) {
 // CalcIslands re-calculate the islands
 func (ds *DeviceSequence) CalcIslands(islands []Island, o Observation) []Island {
 	// TODO: build up the state of the islands for the device based on the current islands and the new observation
-	return append(islands, Island{Duration:o.Duration, Start:o.Timestamp})
+	// currently we just add a new island to the array
+	stop := o.Timestamp.Add(o.Duration)
+	return append(islands, Island{Start:o.Timestamp, Stop: stop})
 }
 
 // New is the constructor that binds the sequence to the device
 func New(deviceID string) *DeviceSequence {
 	ds := DeviceSequence{}
-	_ = ds.TrackChange(&ds, &SequenceCreated{DeviceID:deviceID})
+	_ = ds.TrackChange(&ds, &SequenceInitiated{DeviceID:deviceID})
 	return &ds
 }
 
 // The Observe command that triggers an Observation event and adds it to the DeviceSequence aggreagate
 func (ds *DeviceSequence) Observe(t time.Time, d time.Duration) error {
+	// Could hold some validation of the input before the event is created
 	return ds.TrackChange(ds, &Observation{Timestamp: t, Duration: d})
 }
 
@@ -66,23 +70,10 @@ func main() {
 
 	// serializer
 	serializer := json.New()
-	serializer.Register(&DeviceSequence{}, &SequenceCreated{}, &Observation{})
+	serializer.Register(&DeviceSequence{}, &SequenceInitiated{}, &Observation{})
 
 	// Setup a memory based event and snapshot store with json serializer
 	repo := eventsourcing.NewRepository(memory.Create(serializer), snapshotstore.New(serializer))
-	stream := repo.EventStream()
-
-	// Read the event stream async
-	go func() {
-		for {
-			<-stream.Changes()
-			// advance to next value
-			stream.Next()
-			event := stream.Value().(eventsourcing.Event)
-			fmt.Println("STREAM EVENT")
-			fmt.Println(event)
-		}
-	}()
 
 	// Creates the aggregate and adds a second event
 	aggregate := New("device1")
@@ -94,26 +85,39 @@ func main() {
 	aggregate.Observe(time.Now().Add(d*d), d)
 	aggregate.Observe(time.Now().Add(-d), d)
 
-	// saves the events to the memory backed eventstore
+	// saves the events to the memory backed event store
 	err := repo.Save(aggregate)
 	if err != nil {
 		panic("Could not save the aggregate")
 	}
 
-	// Save Snapshot
+	// Save Snapshot of the current state of the device sequence aggregate
 	repo.SaveSnapshot(aggregate)
 
-	// Load the saved aggregate from the snapshot
+	// extra events are generated
+	aggregate.Observe(time.Now().Add(d), d)
+	aggregate.Observe(time.Now().Add(d*d), d)
+	aggregate.Observe(time.Now().Add(-d), d)
+	// Load the saved aggregate from the snapshot but without the generated events that are not saved yet
 	copy := DeviceSequence{}
 	err = repo.Get(string(aggregate.AggregateID), &copy)
 	if err != nil {
 		panic("Could not get aggregate")
 	}
 
-	// Sleep to make sure the events are delivered from the stream
-	time.Sleep(time.Millisecond * 100)
-	fmt.Println("AGGREGATE")
-	fmt.Println(copy)
+	// Saves the events
+	repo.Save(aggregate)
+
+	// Load the saved aggregate from the snapshot plus the extra events that was created after the snapshot was saved
+	copy2 := DeviceSequence{}
+	err = repo.Get(string(aggregate.AggregateID), &copy2)
+	if err != nil {
+		panic("Could not get aggregate")
+	}
+
+	fmt.Println(len(aggregate.Islands))
+	fmt.Println(len(copy.Islands))
+	fmt.Println(len(copy2.Islands))
 
 }
 
