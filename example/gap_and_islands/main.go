@@ -93,17 +93,20 @@ func main() {
 
 	// Save Snapshot of the current state of the device sequence aggregate
 	repo.SaveSnapshot(aggregate)
-
+	
 	// extra events are generated
 	aggregate.Observe(time.Now().Add(d), d)
 	aggregate.Observe(time.Now().Add(d*d), d)
 	aggregate.Observe(time.Now().Add(-d), d)
+	fmt.Println(len(aggregate.Islands))
 	// Load the saved aggregate from the snapshot but without the generated events that are not saved yet
 	copy := DeviceSequence{}
 	err = repo.Get(string(aggregate.AggregateID), &copy)
 	if err != nil {
 		panic("Could not get aggregate")
 	}
+	// has only 4 of the islands
+	fmt.Println(len(copy.Islands))
 
 	// Saves the events
 	repo.Save(aggregate)
@@ -115,8 +118,7 @@ func main() {
 		panic("Could not get aggregate")
 	}
 
-	fmt.Println(len(aggregate.Islands))
-	fmt.Println(len(copy.Islands))
+	// copy 2 has all the 7 islands in its array
 	fmt.Println(len(copy2.Islands))
 
 }
