@@ -1,4 +1,4 @@
-package main
+package frequent_flier
 
 import (
 	"fmt"
