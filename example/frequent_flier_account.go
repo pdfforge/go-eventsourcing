@@ -34,6 +34,7 @@ const (
 
 // FrequentFlierAccountCreated is the struct of frequent flier accounts created
 type FrequentFlierAccountCreated struct {
+	eventsourcing.Event
 	AccountID         string
 	OpeningMiles      int
 	OpeningTierPoints int
@@ -41,17 +42,20 @@ type FrequentFlierAccountCreated struct {
 
 // StatusMatched is the struct of start matched
 type StatusMatched struct {
+	eventsourcing.Event
 	NewStatus Status
 }
 
 // FlightTaken is the struct of flight taken
 type FlightTaken struct {
+	eventsourcing.Event
 	MilesAdded      int
 	TierPointsAdded int
 }
 
 // PromotedToGoldStatus promoted to gold status
 type PromotedToGoldStatus struct {
+	eventsourcing.Event
 }
 
 // CreateFrequentFlierAccount constructor

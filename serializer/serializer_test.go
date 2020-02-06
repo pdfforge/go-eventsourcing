@@ -28,16 +28,19 @@ type SomeAggregate struct{}
 func (s *SomeAggregate) Transition(event eventsourcing.Event) {}
 
 type SomeData struct {
+	eventsourcing.Event
 	A int
 	B string
 }
 
 type SomeData2 struct {
+	eventsourcing.Event
 	A int
 	B string
 }
 
 var data = SomeData{
+	eventsourcing.Event
 	1,
 	"b",
 }

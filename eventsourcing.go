@@ -36,22 +36,30 @@ var (
 	emptyAggregateID = ""
 )
 
+func (e *Event) aggregateID() string {
+	return e.AggregateRootID
+}
+
+type event interface {
+	aggregateID() string
+}
+
 // TrackChange is used internally by behaviour methods to apply a state change to
 // the current instance and also track it in order that it can be persisted later.
-func (state *AggregateRoot) TrackChange(a aggregate, data interface{}) error {
-	return state.TrackChangeWithMetaData(a, data, nil)
+func (state *AggregateRoot) TrackChange(a aggregate, e event) error {
+	return state.TrackChangeWithMetaData(a, e, nil)
 }
 
 // TrackChangeWithMetaData is used internally by behaviour methods to apply a state change to
 // the current instance and also track it in order that it can be persisted later.
 // meta data is handled by this func to store none related application state
-func (state *AggregateRoot) TrackChangeWithMetaData(a aggregate, data interface{}, metaData map[string]interface{}) error {
+func (state *AggregateRoot) TrackChangeWithMetaData(a aggregate, e event, metaData map[string]interface{}) error {
 	// This can be overwritten in the constructor of the aggregate
 	if state.AggregateID == emptyAggregateID {
 		state.setID(uuid.Must(uuid.NewV4()).String())
 	}
 
-	reason := reflect.TypeOf(data).Elem().Name()
+	reason := reflect.TypeOf(e).Elem().Name()
 	aggregateType := reflect.TypeOf(a).Elem().Name()
 	event := Event{
 		AggregateRootID: state.AggregateID,
@@ -59,7 +67,7 @@ func (state *AggregateRoot) TrackChangeWithMetaData(a aggregate, data interface{
 		Reason:          reason,
 		AggregateType:   aggregateType,
 		Timestamp:       time.Now().UTC(),
-		Data:            data,
+		Data:            e,
 		MetaData:        metaData,
 	}
 	state.AggregateEvents = append(state.AggregateEvents, event)

@@ -2,9 +2,10 @@ package eventsourcing_test
 
 import (
 	"errors"
-	"github.com/hallgren/eventsourcing"
 	"testing"
 	"time"
+
+	"github.com/hallgren/eventsourcing"
 )
 
 // Person aggregate
@@ -17,11 +18,13 @@ type Person struct {
 
 // Born event
 type Born struct {
+	eventsourcing.Event
 	Name string
 }
 
 // AgedOneYear event
 type AgedOneYear struct {
+	eventsourcing.Event
 }
 
 // CreatePerson constructor for the Person

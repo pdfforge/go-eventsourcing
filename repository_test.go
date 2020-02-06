@@ -1,11 +1,12 @@
 package eventsourcing_test
 
 import (
+	"testing"
+
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/eventstore/memory"
 	"github.com/hallgren/eventsourcing/serializer/json"
 	"github.com/hallgren/eventsourcing/snapshotstore"
-	"testing"
 )
 
 func TestSaveAndGetAggregate(t *testing.T) {

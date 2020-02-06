@@ -33,6 +33,10 @@ type aggregate interface {
 	Transition(event eventsourcing.Event)
 }
 
+type event interface {
+	aggregateID() string
+}
+
 var (
 	// ErrAggregateNameMissing return if aggregate name is missing
 	ErrAggregateNameMissing = errors.New("missing aggregate name")

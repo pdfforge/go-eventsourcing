@@ -2,10 +2,11 @@ package snapshotstore_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/hallgren/eventsourcing"
 	"github.com/hallgren/eventsourcing/serializer/json"
 	"github.com/hallgren/eventsourcing/snapshotstore"
-	"testing"
 )
 
 // Person aggregate
@@ -18,11 +19,13 @@ type Person struct {
 
 // Born event
 type Born struct {
+	eventsourcing.Event
 	Name string
 }
 
 // AgedOneYear event
 type AgedOneYear struct {
+	eventsourcing.Event
 }
 
 // CreatePerson constructor for the Person
