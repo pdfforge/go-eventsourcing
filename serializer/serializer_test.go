@@ -1,12 +1,13 @@
 package serializer_test
 
 import (
-	"github.com/hallgren/eventsourcing"
-	"github.com/hallgren/eventsourcing/serializer/json"
-	"github.com/hallgren/eventsourcing/serializer/unsafe"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/hallgren/eventsourcing"
+	"github.com/hallgren/eventsourcing/serializer/json"
+	"github.com/hallgren/eventsourcing/serializer/unsafe"
 )
 
 type serializer interface {
@@ -40,9 +41,8 @@ type SomeData2 struct {
 }
 
 var data = SomeData{
-	eventsourcing.Event
-	1,
-	"b",
+	A: 1,
+	B: "b",
 }
 
 var metaData = make(map[string]interface{})
