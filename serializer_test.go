@@ -1,6 +1,7 @@
 package eventsourcing_test
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"reflect"
 	"sync"
@@ -11,12 +12,18 @@ import (
 
 func initSerializers(t *testing.T) []*eventsourcing.Serializer {
 	var result []*eventsourcing.Serializer
-	s := eventsourcing.NewSerializer(xml.Marshal, xml.Unmarshal)
-	err := s.Register(&SomeAggregate{}, s.Events(&SomeData{}, &SomeData2{}))
+	xmlSerializer := eventsourcing.NewSerializer(xml.Marshal, xml.Unmarshal)
+	err := xmlSerializer.Register(&SomeAggregate{}, xmlSerializer.Events(&SomeData{}, &SomeData2{}))
 	if err != nil {
 		t.Fatalf("could not register aggregate events %v", err)
 	}
-	result = append(result, s)
+	jsonSerializer := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+	err = jsonSerializer.Register(&SomeAggregate{}, xmlSerializer.Events(&SomeData{}, &SomeData2{}))
+	if err != nil {
+		t.Fatalf("could not register aggregate events %v", err)
+	}
+	result = append(result, xmlSerializer)
+	result = append(result, jsonSerializer)
 	return result
 }
 
@@ -63,11 +70,6 @@ func TestSerializeDeserialize(t *testing.T) {
 				t.Fatalf("Could not Unmarshal data, %v", err)
 			}
 
-			/*
-				if data2.A != data.A {
-					t.Fatalf("wrong value in A expected: %d, actual: %d", data.A, data2.A)
-				}
-			*/
 			m, err := s.Marshal(metaData)
 			if err != nil {
 				t.Fatalf("could not Marshal metadata, %v", err)
