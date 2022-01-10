@@ -1,7 +1,7 @@
 package eventsourcing_test
 
 import (
-	"encoding/json"
+	"encoding/xml"
 	"reflect"
 	"sync"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 func initSerializers(t *testing.T) []*eventsourcing.Serializer {
 	var result []*eventsourcing.Serializer
-	s := eventsourcing.NewSerializer(json.Marshal, json.Unmarshal)
+	s := eventsourcing.NewSerializer(xml.Marshal, xml.Unmarshal)
 	err := s.Register(&SomeAggregate{}, s.Events(&SomeData{}, &SomeData2{}))
 	if err != nil {
 		t.Fatalf("could not register aggregate events %v", err)
