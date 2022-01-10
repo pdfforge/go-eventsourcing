@@ -23,8 +23,8 @@ type Snapshot struct {
 // SnapshotAggregate is an Aggregate plus extra methods to help serialize into a snapshot
 type SnapshotAggregate interface {
 	Aggregate
-	Marshal(m MarshalSnapshotFunc) ([]byte, error)
-	Unmarshal(m UnmarshalSnapshotFunc, b []byte) error
+	Marshal(m MarshalFunc) ([]byte, error)
+	Unmarshal(m UnmarshalFunc, b []byte) error
 }
 
 // SnapshotHandler gets and saves snapshots

@@ -46,7 +46,7 @@ type snapshotInternal struct {
 	Exported   string
 }
 
-func (s *snapshot) Marshal(m eventsourcing.MarshalSnapshotFunc) ([]byte, error) {
+func (s *snapshot) Marshal(m eventsourcing.MarshalFunc) ([]byte, error) {
 	snap := snapshotInternal{
 		UnExported: s.unexported,
 		Exported:   s.Exported,
@@ -54,7 +54,7 @@ func (s *snapshot) Marshal(m eventsourcing.MarshalSnapshotFunc) ([]byte, error) 
 	return m(snap)
 }
 
-func (s *snapshot) Unmarshal(m eventsourcing.UnmarshalSnapshotFunc, b []byte) error {
+func (s *snapshot) Unmarshal(m eventsourcing.UnmarshalFunc, b []byte) error {
 	snap := snapshotInternal{}
 	err := m(b, &snap)
 	if err != nil {
