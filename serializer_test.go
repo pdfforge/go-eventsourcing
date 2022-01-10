@@ -48,11 +48,13 @@ var data = SomeData{
 	"b",
 }
 
-var metaData = make(map[string]interface{})
+var metaData = SomeData{
+	2,
+	"c",
+}
 
 func TestSerializeDeserialize(t *testing.T) {
 	serializers := initSerializers(t)
-	metaData["foo"] = "bar"
 	for _, s := range serializers {
 		t.Run(reflect.TypeOf(s).Elem().Name(), func(t *testing.T) {
 			d, err := s.Marshal(data)
@@ -74,13 +76,13 @@ func TestSerializeDeserialize(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not Marshal metadata, %v", err)
 			}
-			metaData2 := map[string]interface{}{}
+			metaData2 := SomeData{}
 			err = s.Unmarshal(m, &metaData2)
 			if err != nil {
 				t.Fatalf("Could not Unmarshal metadata, %v", err)
 			}
-			if metaData["foo"] != metaData2["foo"] {
-				t.Fatalf("wrong value in metadata key foo expected: bar, actual: %v", metaData2["foo"])
+			if metaData.A != metaData2.A {
+				t.Fatalf("wrong value in metadata key foo expected: %v, actual: %v", metaData.A, metaData2.A)
 			}
 		})
 	}
@@ -88,7 +90,6 @@ func TestSerializeDeserialize(t *testing.T) {
 
 func TestConcurrentUnmarshal(t *testing.T) {
 	serializers := initSerializers(t)
-	metaData["foo"] = "bar"
 	for _, s := range serializers {
 		d, err := s.Marshal(data)
 		if err != nil {

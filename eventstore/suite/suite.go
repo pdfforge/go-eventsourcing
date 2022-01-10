@@ -83,7 +83,7 @@ var aggregateIDOther = "666"
 var timestamp = time.Now()
 
 func testEventsWithID(aggregateID string) []eventsourcing.Event {
-	metaData := make(map[string]interface{})
+	metaData := make(map[string]string)
 	metaData["test"] = "hello"
 	history := []eventsourcing.Event{
 		{AggregateID: aggregateID, Version: 1, AggregateType: aggregateType, Timestamp: timestamp, Data: &FrequentFlierAccountCreated{AccountId: "1234567", OpeningMiles: 10000, OpeningTierPoints: 0}, MetaData: metaData},
@@ -163,7 +163,7 @@ func saveAndGetEvents(es eventsourcing.EventStore) error {
 		return errors.New("wrong event aggregateType returned")
 	}
 
-	if fetchedEventsIncludingPartTwo[0].MetaData["test"] != "hello" {
+	if fetchedEventsIncludingPartTwo[0].MetaData.(map[string]string)["test"] != "hello" {
 		return errors.New("wrong event meta data returned")
 	}
 
