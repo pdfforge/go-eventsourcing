@@ -99,7 +99,6 @@ func (er *EventRepository) Save(a aggregate) error {
 		return nil
 	}
 
-	// use under laying event slice to set GlobalVersion
 	for _, event := range root.aggregateEvents {
 		data, err := er.encoder.Serialize(event.Data())
 		if err != nil {
