@@ -4,17 +4,13 @@ import (
 	sqldriver "database/sql"
 	"errors"
 	"fmt"
-	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/hallgren/eventsourcing/core"
 	"github.com/hallgren/eventsourcing/core/testsuite"
 	"github.com/hallgren/eventsourcing/eventstore/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func TestSuite(t *testing.T) {
 	f := func() (core.EventStore, func(), error) {
