@@ -1,6 +1,8 @@
 package sql
 
-import "context"
+import (
+	"context"
+)
 
 const createTable = `create table events (seq INTEGER PRIMARY KEY AUTOINCREMENT, id VARCHAR NOT NULL, version INTEGER, reason VARCHAR, type VARCHAR, timestamp VARCHAR, data BLOB, metadata BLOB);`
 
@@ -25,6 +27,14 @@ func (s *SQL) migrate(stm []string) error {
 		return nil
 	}
 	defer tx.Rollback()
+
+	// check if the migration is already done
+	var count int
+	err = tx.QueryRow(`Select count(*) from events`).Scan(&count)
+	if err == nil {
+		return nil
+	}
+
 	for _, b := range stm {
 		_, err := tx.Exec(b)
 		if err != nil {
