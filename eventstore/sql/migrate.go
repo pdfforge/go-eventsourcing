@@ -24,14 +24,14 @@ func (s *SQL) MigrateTest() error {
 func (s *SQL) migrate(stm []string) error {
 	tx, err := s.db.BeginTx(context.Background(), nil)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer tx.Rollback()
 
 	// check if the migration is already done
-	var count int
-	err = tx.QueryRow(`Select count(*) from events`).Scan(&count)
+	rows, err := tx.Query(`Select count(*) from events`)
 	if err == nil {
+		rows.Close()
 		return nil
 	}
 
