@@ -1,6 +1,6 @@
 module github.com/hallgren/eventsourcing/eventstore/sqlite
 
-go 1.21.9
+go 1.13
 
 require (
 	github.com/hallgren/eventsourcing/eventstore/sql v0.4.1
