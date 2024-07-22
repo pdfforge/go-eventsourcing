@@ -62,6 +62,23 @@ jobs:
       - name: Test
         run: cd eventstore/sql && go test -v ./...
 
+  sqlite:
+    name: sqlite eventstore
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.19'
+
+      - name: Build
+        run: cd eventstore/sqlite && go build -v ./...
+
+      - name: Test
+        run: cd eventstore/sqlite && go test -v ./...
+
   esdb:
     name: esdb eventstore
     runs-on: ubuntu-latest
