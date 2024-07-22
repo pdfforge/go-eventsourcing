@@ -27,7 +27,7 @@ func (s *SQLite) Close() {
 
 // Save persists events to the database
 func (s *SQLite) Save(events []core.Event) error {
-	// prevent multiple writters
+	// prevent multiple writers
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	return s.sqlES.Save(events)
