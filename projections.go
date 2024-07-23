@@ -30,13 +30,14 @@ type Projection struct {
 	fetchF    fetchFunc
 	callbackF callbackFunc
 	handler   *ProjectionHandler
-	Pace      time.Duration // Pace is used when a projection is running and it reaches the end of the event stream
-	Strict    bool          // Strict indicate if the projection should return error if the event it fetches is not found in the register
+	trigger   chan struct{}
+	Strict    bool // Strict indicate if the projection should return error if the event it fetches is not found in the register
 	Name      string
 }
 
 // Group runs projections concurrently
 type Group struct {
+	Pace        time.Duration // Pace is used when a projection is running and it reaches the end of the event stream
 	handler     *ProjectionHandler
 	projections []*Projection
 	cancelF     context.CancelFunc
@@ -57,7 +58,7 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 		fetchF:    fetchF,
 		callbackF: callbackF,
 		handler:   ph,
-		Pace:      time.Second * 10,            // Default pace 10 seconds
+		trigger:   make(chan struct{}),
 		Strict:    true,                        // Default strict is active
 		Name:      fmt.Sprintf("%d", ph.count), // Default the name to it's creation index
 	}
@@ -65,25 +66,25 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 	return &projection
 }
 
+// Trigger force the projection to run independent on the pace
+func (p *Projection) Trigger() {
+	p.trigger <- struct{}{}
+}
+
 // Run runs the projection forever until the context is cancelled. When there are no more events to consume it
-// sleeps the set pace before it runs again.
-func (p *Projection) Run(ctx context.Context) ProjectionResult {
-	var result ProjectionResult
-	timer := time.NewTimer(0)
+// waits for a trigger or context cancel.
+func (p *Projection) Run(ctx context.Context, pace time.Duration) ProjectionResult {
 	for {
+		result := p.RunToEnd(ctx)
+		if result.Error != nil {
+			return result
+		}
 		select {
 		case <-ctx.Done():
-			if !timer.Stop() {
-				<-timer.C
-			}
 			return ProjectionResult{Error: ctx.Err(), Name: result.Name, LastHandledEvent: result.LastHandledEvent}
-		case <-timer.C:
-			result = p.RunToEnd(ctx)
-			if result.Error != nil {
-				return result
-			}
+		case <-time.After(pace):
+		case <-p.trigger:
 		}
-		timer.Reset(p.Pace)
 	}
 }
 
@@ -188,11 +189,18 @@ func (g *Group) Start() {
 	for _, projection := range g.projections {
 		go func(p *Projection) {
 			defer g.wg.Done()
-			result := p.Run(ctx)
+			result := p.Run(ctx, g.Pace)
 			if !errors.Is(result.Error, context.Canceled) {
 				g.ErrChan <- result.Error
 			}
 		}(projection)
+	}
+}
+
+// Trigger force all projections to run
+func (g *Group) Trigger() {
+	for _, projection := range g.projections {
+		projection.Trigger()
 	}
 }
 

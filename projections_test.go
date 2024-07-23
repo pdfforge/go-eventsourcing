@@ -124,14 +124,63 @@ func TestRun(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
 	defer cancel()
 
-	// will run once then sleep 10 seconds
-	result := proj.Run(ctx)
+	// will run once then sleep for 10 seconds
+	result := proj.Run(ctx, time.Second*10)
 	if !errors.Is(result.Error, context.DeadlineExceeded) {
 		t.Fatal(err)
 	}
 
 	if projectedName != sourceName {
 		t.Fatalf("expected %q was %q", sourceName, projectedName)
+	}
+}
+
+func TestRunTrigger(t *testing.T) {
+	// setup
+	es := memory.Create()
+	register := eventsourcing.NewRegister()
+	register.Register(&Person{})
+
+	projectedName := ""
+	sourceName := "kalle"
+
+	// run projection
+	p := eventsourcing.NewProjectionHandler(register, eventsourcing.EncoderJSON{})
+	proj := p.Projection(es.All(0, 1), func(event eventsourcing.Event) error {
+		switch e := event.Data().(type) {
+		case *Born:
+			projectedName = e.Name
+		}
+		return nil
+	})
+
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	defer cancel()
+
+	var errGoRoutine error
+	go func() {
+		// will run once then sleep for 10 seconds
+		result := proj.Run(ctx, time.Second*10)
+		if !errors.Is(result.Error, context.Canceled) {
+			errGoRoutine = result.Error
+		}
+	}()
+
+	// create the event after the projection is started as the projection would have consume it.
+	err := createPersonEvent(es, sourceName, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// force the projection to run
+	proj.Trigger()
+
+	if projectedName != sourceName {
+		t.Fatalf("expected projected name: %q was %q", sourceName, projectedName)
+	}
+
+	if errGoRoutine != nil {
+		t.Fatal(errGoRoutine)
 	}
 }
 
