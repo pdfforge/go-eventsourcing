@@ -66,7 +66,8 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 	return &projection
 }
 
-// Trigger force the projection to run independent on the pace
+// Trigger force a running projection to run immediately independent on the pace
+// Trigger will deadlock if the projection is not running.
 func (p *Projection) Trigger() {
 	p.trigger <- struct{}{}
 }
