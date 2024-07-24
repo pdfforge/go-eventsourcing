@@ -124,18 +124,25 @@ func TestRun(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
 	defer cancel()
 
+	group := p.Group(proj)
+	group.Start()
+	defer group.Stop()
+
+	<-ctx.Done()
 	// will run once then sleep for 10 seconds
-	result := proj.Run(ctx, time.Second*10)
-	if !errors.Is(result.Error, context.DeadlineExceeded) {
-		t.Fatal(err)
-	}
+	/*
+		result := proj.Run(ctx, time.Second*10)
+		if !errors.Is(result.Error, context.DeadlineExceeded) {
+			t.Fatal(err)
+		}
+	*/
 
 	if projectedName != sourceName {
 		t.Fatalf("expected %q was %q", sourceName, projectedName)
 	}
 }
 
-func TestRunTrigger(t *testing.T) {
+func TestRunTriggerSync(t *testing.T) {
 	// setup
 	es := memory.Create()
 	register := eventsourcing.NewRegister()
@@ -154,17 +161,9 @@ func TestRunTrigger(t *testing.T) {
 		return nil
 	})
 
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
-	defer cancel()
-
-	var errGoRoutine error
-	go func() {
-		// will run once then sleep for 10 seconds
-		result := proj.Run(ctx, time.Second*10)
-		if !errors.Is(result.Error, context.Canceled) {
-			errGoRoutine = result.Error
-		}
-	}()
+	group := p.Group(proj)
+	group.Start()
+	defer group.Stop()
 
 	// create the event after the projection is started as the projection would have consume it.
 	err := createPersonEvent(es, sourceName, 1)
@@ -172,15 +171,16 @@ func TestRunTrigger(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// check projection is not updated before trigger
+	if projectedName == sourceName {
+		t.Fatalf("expected projected name to differ: %q was %q", sourceName, projectedName)
+	}
+
 	// force the projection to run
-	proj.Trigger()
+	group.TriggerSync()
 
 	if projectedName != sourceName {
 		t.Fatalf("expected projected name: %q was %q", sourceName, projectedName)
-	}
-
-	if errGoRoutine != nil {
-		t.Fatal(errGoRoutine)
 	}
 }
 
