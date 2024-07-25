@@ -510,7 +510,7 @@ If the pace is not fast enough for some senario it's possible to trigger a poll.
 
 `TriggerAsync()`: Triggers all projections in the group and return.
 
-`TriggerSync()`: Triggers all projections in the group and also wait for the projections to finish.
+`TriggerSync()`: Triggers all projections in the group and wait for them running to the end of there event streams.
 
 #### Race
 
