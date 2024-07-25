@@ -462,7 +462,6 @@ Run(ctx context.Context) error
 
 A projection have a set of properties that can affect it's behaivior.
 
-* **Pace** - Is used in the Run method to set how often the projection will poll the event store for new events.
 * **Strict** - Default true and it will trigger an error if a fetched event is not registered in the event `Register`. This force all events to be handled by the callbackFunc.
 * **Name** - The name of the projection. Can be useful when debugging multiple running projection. The default name is the index it was created from the projection handler.
 
@@ -504,6 +503,15 @@ select {
 		return
 }
 ```
+
+It's possible to change how often the projections poll the event store for new events.
+
+* **Pace** - Default is every 10 second.
+
+It's possible to trigger the projections to run to the end by: 
+
+`TriggerAsync()`: Triggers all projections in the group and return.
+`TriggerSync()`: Triggers all projections in the group and also wait for the projections to finish.
 
 #### Race
 
