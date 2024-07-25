@@ -504,9 +504,9 @@ select {
 }
 ```
 
-The pace of the projection poll can be changed with the `Pace` property. Default is every 10 second.
+The pace of the projection can be changed with the `Pace` property. Default is every 10 second.
 
-If the pace is not fast enough for some senario it's possible to trigger a poll.
+If the pace is not fast enough for some senario it's possible to trigger manually.
 
 `TriggerAsync()`: Triggers all projections in the group and return.
 
