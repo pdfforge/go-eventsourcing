@@ -70,7 +70,6 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 // triggerAsync force a running projection to run immediately independent on the pace
 // It will return immediately after triggering the prjection to run.
 // If the trigger channel is already filled it will return without inserting any value.
-// TriggerAsync will deadlock if the projection is not running.
 func (p *Projection) triggerAsync() {
 	select {
 	case p.trigger <- func() {}:
@@ -80,7 +79,6 @@ func (p *Projection) triggerAsync() {
 
 // triggerSync force a running projection to run immediately independent on the pace
 // It will wait for the projection to finish running to its current end before returning.
-// TriggerAsync will deadlock if the projection is not running.
 func (p *Projection) triggerSync() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -203,7 +201,6 @@ func (ph *ProjectionHandler) Group(projections ...*Projection) *Group {
 		handler:     ph,
 		projections: projections,
 		cancelF:     func() {},
-		ErrChan:     make(chan error),
 		Pace:        time.Second * 10, // Default pace 10 seconds
 	}
 }
@@ -211,6 +208,7 @@ func (ph *ProjectionHandler) Group(projections ...*Projection) *Group {
 // Start starts all projectinos in the group, an error channel i created on the group to notify
 // if a result containing an error is returned from a projection
 func (g *Group) Start() {
+	g.ErrChan = make(chan error)
 	ctx, cancel := context.WithCancel(context.Background())
 	g.cancelF = cancel
 
