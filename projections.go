@@ -69,9 +69,13 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 
 // triggerAsync force a running projection to run immediately independent on the pace
 // It will return immediately after triggering the prjection to run.
+// If the trigger channel is already filled it will return without inserting any value.
 // TriggerAsync will deadlock if the projection is not running.
 func (p *Projection) triggerAsync() {
-	p.trigger <- func() {}
+	select {
+	case p.trigger <- func() {}:
+	default:
+	}
 }
 
 // triggerSync force a running projection to run immediately independent on the pace
