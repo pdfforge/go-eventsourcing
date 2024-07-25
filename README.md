@@ -504,13 +504,12 @@ select {
 }
 ```
 
-It's possible to change how often the projections poll the event store for new events.
+The pace of the projection poll can be changed with the `Pace` property. Default is every 10 second.
 
-* **Pace** - Default is every 10 second.
-
-It's possible to trigger the projections to run to the end by: 
+If the pace is not fast enough for some senario it's possible to trigger a poll.
 
 `TriggerAsync()`: Triggers all projections in the group and return.
+
 `TriggerSync()`: Triggers all projections in the group and also wait for the projections to finish.
 
 #### Race
