@@ -188,6 +188,9 @@ func TestCloseEmptyGroup(t *testing.T) {
 	p := eventsourcing.NewProjectionHandler(eventsourcing.NewRegister(), eventsourcing.EncoderJSON{})
 	g := p.Group()
 	g.Stop()
+	g.Start()
+	g.Stop()
+	g.Stop()
 }
 
 func TestStartMultipleProjections(t *testing.T) {
