@@ -130,12 +130,10 @@ func TestRun(t *testing.T) {
 
 	<-ctx.Done()
 	// will run once then sleep for 10 seconds
-	/*
-		result := proj.Run(ctx, time.Second*10)
-		if !errors.Is(result.Error, context.DeadlineExceeded) {
-			t.Fatal(err)
-		}
-	*/
+	err = proj.Run(ctx, time.Second*10)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatal(err)
+	}
 
 	if projectedName != sourceName {
 		t.Fatalf("expected %q was %q", sourceName, projectedName)
@@ -165,6 +163,9 @@ func TestRunTriggerSync(t *testing.T) {
 	group.Start()
 	defer group.Stop()
 
+	// make sure the projection has finished it's first round
+	time.Sleep(time.Millisecond * 10)
+
 	// create the event after the projection is started as the projection would have consume it.
 	err := createPersonEvent(es, sourceName, 1)
 	if err != nil {
@@ -176,7 +177,7 @@ func TestRunTriggerSync(t *testing.T) {
 		t.Fatalf("expected projected name to differ: %q was %q", sourceName, projectedName)
 	}
 
-	// force the projection to run
+	// force the projection to run and wait for it to finish
 	group.TriggerSync()
 
 	if projectedName != sourceName {

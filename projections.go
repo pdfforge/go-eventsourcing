@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/hallgren/eventsourcing/core"
@@ -27,7 +28,7 @@ func NewProjectionHandler(register *Register, encoder encoder) *ProjectionHandle
 }
 
 type Projection struct {
-	running   bool
+	running   atomic.Bool
 	fetchF    fetchFunc
 	callbackF callbackFunc
 	handler   *ProjectionHandler
@@ -71,7 +72,7 @@ func (ph *ProjectionHandler) Projection(fetchF fetchFunc, callbackF callbackFunc
 // It will return immediately after triggering the prjection to run.
 // If the trigger channel is already filled it will return without inserting any value.
 func (p *Projection) TriggerAsync() {
-	if !p.running {
+	if !p.running.Load() {
 		return
 	}
 	select {
@@ -83,7 +84,7 @@ func (p *Projection) TriggerAsync() {
 // TriggerSync force a running projection to run immediately independent on the pace
 // It will wait for the projection to finish running to its current end before returning.
 func (p *Projection) TriggerSync() {
-	if !p.running {
+	if !p.running.Load() {
 		return
 	}
 	wg := sync.WaitGroup{}
@@ -98,9 +99,9 @@ func (p *Projection) TriggerSync() {
 // Run runs the projection forever until the context is cancelled. When there are no more events to consume it
 // waits for a trigger or context cancel.
 func (p *Projection) Run(ctx context.Context, pace time.Duration) error {
-	p.running = true
+	p.running.Store(true)
 	defer func() {
-		p.running = false
+		p.running.Store(false)
 	}()
 
 	var noopFunc = func() {}
@@ -112,6 +113,8 @@ func (p *Projection) Run(ctx context.Context, pace time.Duration) error {
 	}
 	for {
 		result := p.RunToEnd(ctx)
+		// if triggered by a sync trigger the triggerFunc callback that it's finished
+		// if not triggered by a sync trigger the triggerFunc will call an no ops function
 		triggerFunc()
 		if result.Error != nil {
 			return result.Error
