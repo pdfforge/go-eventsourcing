@@ -3,6 +3,7 @@ package eventsourcing_test
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/hallgren/eventsourcing"
@@ -402,5 +403,36 @@ func TestProjectionFromRepo(t *testing.T) {
 
 	if projectedName != "kalle" {
 		t.Fatalf("expected projectedName to be kalle was %q", projectedName)
+	}
+}
+
+func TestConcurrentRead(t *testing.T) {
+	repo := eventsourcing.NewEventRepository(memory.Create())
+	repo.Register(&Person{})
+
+	person, err := CreatePerson("kalle")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = repo.Save(person)
+	if err != nil {
+		t.Fatal("could not save aggregate")
+	}
+
+	p1 := Person{}
+	p2 := Person{}
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	go func() {
+		repo.Get(person.ID(), &p1)
+		wg.Done()
+	}()
+	go func() {
+		repo.Get(person.ID(), &p2)
+		wg.Done()
+	}()
+	wg.Wait()
+	if p1.Age != p2.Age {
+		t.Fatal("age differs")
 	}
 }
