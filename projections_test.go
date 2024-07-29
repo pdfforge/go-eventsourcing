@@ -124,11 +124,6 @@ func TestRun(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
 	defer cancel()
 
-	group := p.Group(proj)
-	group.Start()
-	defer group.Stop()
-
-	<-ctx.Done()
 	// will run once then sleep for 10 seconds
 	err = proj.Run(ctx, time.Second*10)
 	if !errors.Is(err, context.DeadlineExceeded) {
