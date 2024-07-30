@@ -418,6 +418,14 @@ func TestConcurrentRead(t *testing.T) {
 	if err != nil {
 		t.Fatal("could not save aggregate")
 	}
+	person2, err := CreatePerson("anka")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = repo.Save(person2)
+	if err != nil {
+		t.Fatal("could not save aggregate")
+	}
 
 	p1 := Person{}
 	p2 := Person{}
@@ -428,11 +436,11 @@ func TestConcurrentRead(t *testing.T) {
 		wg.Done()
 	}()
 	go func() {
-		repo.Get(person.ID(), &p2)
+		repo.Get(person2.ID(), &p2)
 		wg.Done()
 	}()
 	wg.Wait()
-	if p1.Age != p2.Age {
-		t.Fatal("age differs")
+	if p1.Name == p2.Name {
+		t.Fatal("name should differ")
 	}
 }
