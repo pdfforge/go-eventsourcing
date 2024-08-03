@@ -446,6 +446,10 @@ type ProjectionResult struct {
 }
 ```
 
+* **Error** Is set if the projection returned an error
+* **ProjectionName** Is the name of the projection
+* **LastHandledEvent** The last successfully handled event (can be useful during debugging)
+
 #### Run
 
  Run will run forever until canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time by the pace duration.
@@ -454,9 +458,7 @@ type ProjectionResult struct {
  Run(ctx context.Context, pace time.Duration) error
  ```
 
-* **Error** Is set if the projection returned an error
-* **ProjectionName** Is the name of the projection
-* **LastHandledEvent** The last successfully handled event (can be useful during debugging)
+A running projection can be triggered manually via `TriggerAsync` and `TriggerSync` methods.
 
 #### Run
 
