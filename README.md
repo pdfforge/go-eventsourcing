@@ -458,15 +458,7 @@ type ProjectionResult struct {
  Run(ctx context.Context, pace time.Duration) error
  ```
 
-A running projection can be triggered manually via `TriggerAsync` and `TriggerSync` methods.
-
-#### Run
-
-Run will run forever until canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time set in the projection property `Pace`.
-
-```go
-Run(ctx context.Context) error
-```
+A running projection can be triggered manually via `TriggerAsync()` or `TriggerSync()`.
 
 ### Projection properties
 
