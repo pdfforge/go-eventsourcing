@@ -452,7 +452,7 @@ type ProjectionResult struct {
 
 #### Run
 
- Run will run forever until canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time by the pace duration.
+Run will run forever until canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time by the pace duration.
 
  ```go
  Run(ctx context.Context, pace time.Duration) error
