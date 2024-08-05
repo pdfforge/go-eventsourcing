@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -135,7 +136,7 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestRunTriggerSync(t *testing.T) {
+func TestTriggerSync(t *testing.T) {
 	// setup
 	es := memory.Create()
 	register := eventsourcing.NewRegister()
@@ -172,9 +173,63 @@ func TestRunTriggerSync(t *testing.T) {
 		t.Fatalf("expected projected name to differ: %q was %q", sourceName, projectedName)
 	}
 
-	// force the projection to run and wait for it to finish
+	// trigger the projection
 	group.TriggerSync()
 
+	// check that the projected value is updated
+	if projectedName != sourceName {
+		t.Fatalf("expected projected name: %q was %q", sourceName, projectedName)
+	}
+}
+
+func TestTriggerAsync(t *testing.T) {
+	// setup
+	es := memory.Create()
+	register := eventsourcing.NewRegister()
+	register.Register(&Person{})
+
+	projectedName := ""
+	sourceName := "kalle"
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// run projection
+	p := eventsourcing.NewProjectionHandler(register, eventsourcing.EncoderJSON{})
+	proj := p.Projection(es.All(0, 1), func(event eventsourcing.Event) error {
+		switch e := event.Data().(type) {
+		case *Born:
+			projectedName = e.Name
+			wg.Done()
+		}
+		return nil
+	})
+
+	group := p.Group(proj)
+	group.Start()
+	defer group.Stop()
+
+	// make sure the projection has finished it's first round
+	time.Sleep(time.Millisecond * 10)
+
+	// create the event after the projection is started as the projection would have consume it.
+	err := createPersonEvent(es, sourceName, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check projection is not updated before trigger
+	if projectedName == sourceName {
+		t.Fatalf("expected projected name to differ: %q was %q", sourceName, projectedName)
+	}
+
+	// trigger the projection
+	group.TriggerAsync()
+
+	// wait until the async trigger has finished
+	wg.Wait()
+
+	// check that the projected value is updated
 	if projectedName != sourceName {
 		t.Fatalf("expected projected name: %q was %q", sourceName, projectedName)
 	}
