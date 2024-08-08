@@ -20,6 +20,9 @@ type ProjectionHandler struct {
 	count    int
 }
 
+// ErrProjectionAlreadyRunning is returned if Run is called on an already running projection
+var ErrProjectionAlreadyRunning = errors.New("projection is already running")
+
 func NewProjectionHandler(register *Register, encoder encoder) *ProjectionHandler {
 	return &ProjectionHandler{
 		register: register,
@@ -99,6 +102,9 @@ func (p *Projection) TriggerSync() {
 // Run runs the projection forever until the context is cancelled. When there are no more events to consume it
 // waits for a trigger or context cancel.
 func (p *Projection) Run(ctx context.Context, pace time.Duration) error {
+	if p.running.Load() {
+		return ErrProjectionAlreadyRunning
+	}
 	p.running.Store(true)
 	defer func() {
 		p.running.Store(false)

@@ -136,6 +136,45 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunSameProjectionConcurrently(t *testing.T) {
+	// setup
+	es := memory.Create()
+	register := eventsourcing.NewRegister()
+	register.Register(&Person{})
+
+	sourceName := "kalle"
+
+	err := createPersonEvent(es, sourceName, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	// run projection
+	p := eventsourcing.NewProjectionHandler(register, eventsourcing.EncoderJSON{})
+	proj := p.Projection(es.All(0, 1), func(event eventsourcing.Event) error {
+		wg.Done()
+		return nil
+	})
+
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	defer cancel()
+
+	// Run the projection
+	go func() {
+		proj.Run(ctx, time.Second*10)
+	}()
+
+	// wait to make sure the projection is already running
+	wg.Wait()
+
+	err = proj.Run(ctx, time.Second*10)
+	if !errors.Is(err, eventsourcing.ErrProjectionAlreadyRunning) {
+		t.Fatal(err)
+	}
+}
+
 func TestTriggerSync(t *testing.T) {
 	// setup
 	es := memory.Create()
