@@ -239,8 +239,8 @@ func TestTriggerAsync(t *testing.T) {
 		switch e := event.Data().(type) {
 		case *Born:
 			projectedName = e.Name
-			wg.Done()
 		}
+		wg.Done()
 		return nil
 	})
 
@@ -252,7 +252,7 @@ func TestTriggerAsync(t *testing.T) {
 	time.Sleep(time.Millisecond * 10)
 
 	// create the event after the projection is started as the projection would have consume it.
-	err := createPersonEvent(es, sourceName, 1)
+	err := createPersonEvent(es, sourceName, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,6 +263,8 @@ func TestTriggerAsync(t *testing.T) {
 	}
 
 	// trigger the projection
+	group.TriggerAsync()
+	group.TriggerAsync()
 	group.TriggerAsync()
 
 	// wait until the async trigger has finished
