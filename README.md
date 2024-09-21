@@ -436,15 +436,7 @@ RunToEnd fetch events from the event store until it reaches the end of the event
 RunToEnd(ctx context.Context) ProjectionResult
 ```
 
-#### Run
-
-Run will run forever until canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time set in the projection property `Pace`.
-
-```go
-Run(ctx context.Context) ProjectionResult
-```
-
-All run methods return a ProjectionResult.
+`RunOnce` and `RunToEnd` both return a ProjectionResult 
 
 ```go
 type ProjectionResult struct {
@@ -458,11 +450,20 @@ type ProjectionResult struct {
 * **ProjectionName** Is the name of the projection
 * **LastHandledEvent** The last successfully handled event (can be useful during debugging)
 
+#### Run
+
+Run will run forever until event consumer is returning an error or if it's canceled from the outside. When it hits the end of the event stream it will start a timer and sleep the time set in the projection property `Pace`.
+
+ ```go
+ Run(ctx context.Context, pace time.Duration) error
+ ```
+
+A running projection can be triggered manually via `TriggerAsync()` or `TriggerSync()`.
+
 ### Projection properties
 
 A projection have a set of properties that can affect it's behaivior.
 
-* **Pace** - Is used in the Run method to set how often the projection will poll the event store for new events.
 * **Strict** - Default true and it will trigger an error if a fetched event is not registered in the event `Register`. This force all events to be handled by the callbackFunc.
 * **Name** - The name of the projection. Can be useful when debugging multiple running projection. The default name is the index it was created from the projection handler.
 
@@ -497,13 +498,21 @@ defer g.Stop()
 
 // handling error in projection or termination from outside
 select {
-	case result := <-g.ErrChan:
-		// handle the result that will have an error in the result.Error
+	case err := <-g.ErrChan:
+		// handle the error
 	case <-doneChan:
 		// stop signal from the out side
 		return
 }
 ```
+
+The pace of the projection can be changed with the `Pace` property. Default is every 10 second.
+
+If the pace is not fast enough for some senario it's possible to trigger manually.
+
+`TriggerAsync()`: Triggers all projections in the group and return.
+
+`TriggerSync()`: Triggers all projections in the group and wait for them running to the end of there event streams.
 
 #### Race
 
