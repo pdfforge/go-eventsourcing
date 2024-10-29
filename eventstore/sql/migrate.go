@@ -13,8 +13,8 @@ const createTableMySql = `create table events (seq INT UNIQUE PRIMARY KEY AUTO_I
 const createTablePSQL = `create table events (seq SERIAL PRIMARY KEY, id VARCHAR NOT NULL, version INTEGER, reason VARCHAR, "type" VARCHAR, timestamp VARCHAR, data bytea, metadata bytea);`
 
 func getCreateTableStmt(driver driver.Driver) string {
-	dv := reflect.ValueOf(driver)
-	switch dv.Type().String() {
+	driverType := reflect.TypeOf(driver).String()
+	switch driverType {
 	case "*pq.Driver":
 		log.Print("Use migrating statement for PostgresSQL")
 		return createTablePSQL
